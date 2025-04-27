@@ -68,11 +68,27 @@ function M.generate_field(value, indent)
 				end
 			end
 			table.insert(lines, pad .. '\t} `json:"' .. key .. '"`')
-		elseif vim.islist(val) and #val > 0 and M.infer_go_type(val[1]) == "struct" then
-			table.insert(
-				lines,
-				pad .. "\t" .. field_name .. " []" .. M.generate_field(val[1], indent + 1) .. ' `json:"' .. key .. '"`'
-			)
+		elseif vim.islist(val) then
+			if #val == 0 then
+				table.insert(lines, pad .. "\t" .. field_name .. ' []interface{} `json:"' .. key .. '"`')
+			else
+				local elem_type = M.infer_go_type(val[1])
+				if elem_type == "struct" then
+					table.insert(
+						lines,
+						pad
+							.. "\t"
+							.. field_name
+							.. " []"
+							.. M.generate_field(val[1], indent + 1)
+							.. ' `json:"'
+							.. key
+							.. '"`'
+					)
+				else
+					table.insert(lines, pad .. "\t" .. field_name .. " []" .. elem_type .. ' `json:"' .. key .. '"`')
+				end
+			end
 		else
 			table.insert(lines, pad .. "\t" .. field_name .. " " .. go_type .. ' `json:"' .. key .. '"`')
 		end
